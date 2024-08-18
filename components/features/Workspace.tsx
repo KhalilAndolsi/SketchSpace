@@ -2,19 +2,20 @@
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/inputAnimated";
 import { Button } from "@/components/ui/button";
-import { Loader, Save, Trash } from "lucide-react";
+import { Grid, Loader, Save, Trash } from "lucide-react";
 import { Excalidraw, MainMenu, WelcomeScreen } from "@excalidraw/excalidraw";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function Workspace({ data }: any) {
-  const router = useRouter()
+  const router = useRouter();
   const { resolvedTheme }: any = useTheme();
   const [title, setTitle] = useState(data.title);
   const [whiteBoardData, setWhiteBoardData] = useState<any>();
   const [isSaved, setIsSaved] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [isGrid, setIsGrid] = useState(false);
 
   const handleSave = async () => {
     try {
@@ -46,7 +47,7 @@ export default function Workspace({ data }: any) {
       const result = await response.json();
       if (response.ok) {
         toast.success(result.message);
-        router.replace("/workspace")
+        router.replace("/workspace");
         router.refresh();
       }
     } catch (error: any) {
@@ -71,6 +72,7 @@ export default function Workspace({ data }: any) {
           <Button
             onClick={handleDelete}
             disabled={isDeleted}
+            title="delete"
             className="border-2 border-red-500 bg-red-500 text-white hover:bg-red-200 hover:text-red-500">
             {isDeleted ? (
               <Loader size={16} strokeWidth={2.5} className="animate-spin" />
@@ -81,12 +83,19 @@ export default function Workspace({ data }: any) {
           <Button
             onClick={handleSave}
             disabled={isSaved}
+            title="save"
             className="border-2 border-green-500 bg-green-500 text-white hover:bg-green-200 hover:text-green-500">
             {isSaved ? (
               <Loader size={16} strokeWidth={2.5} className="animate-spin" />
             ) : (
               <Save size={16} strokeWidth={2.5} />
             )}
+          </Button>
+          <Button
+            onClick={() => setIsGrid((prev) => !prev)}
+            title="grid"
+            className="border-2 border-blue-500 bg-blue-500 text-white hover:bg-blue-200 hover:text-blue-500">
+            <Grid size={16} strokeWidth={2.5} />
           </Button>
         </div>
       </div>
@@ -97,6 +106,7 @@ export default function Workspace({ data }: any) {
           onChange={(excalidrawElements, appState) =>
             setWhiteBoardData(excalidrawElements)
           }
+          gridModeEnabled={isGrid}
           UIOptions={{
             canvasActions: {
               saveToActiveFile: false,
