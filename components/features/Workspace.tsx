@@ -7,6 +7,14 @@ import { Excalidraw, MainMenu, WelcomeScreen } from "@excalidraw/excalidraw";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function Workspace({ data }: any) {
   const router = useRouter();
@@ -16,6 +24,19 @@ export default function Workspace({ data }: any) {
   const [isSaved, setIsSaved] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
   const [isGrid, setIsGrid] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // useEffect(() => {
+  //   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  //     console.log(event)
+  //   };
+
+  //   window.addEventListener("beforeunload", handleBeforeUnload);
+
+  //   return () => {
+  //     window.removeEventListener("beforeunload", handleBeforeUnload);
+  //   };
+  // }, []);
 
   const handleSave = async () => {
     try {
@@ -54,6 +75,7 @@ export default function Workspace({ data }: any) {
       toast.error(error.message);
     } finally {
       setIsDeleted(false);
+      setIsOpen(false);
     }
   };
   return (
@@ -69,17 +91,45 @@ export default function Workspace({ data }: any) {
           />
         </div>
         <div className="space-x-2">
-          <Button
-            onClick={handleDelete}
-            disabled={isDeleted}
-            title="delete"
-            className="border-2 border-red-500 bg-red-500 text-white hover:bg-red-200 hover:text-red-500">
-            {isDeleted ? (
-              <Loader size={16} strokeWidth={2.5} className="animate-spin" />
-            ) : (
-              <Trash size={16} strokeWidth={2.5} />
-            )}
-          </Button>
+          {/* ======================================================== Delete ======================================================== */}
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button
+                disabled={isDeleted}
+                title="delete"
+                className="border-2 border-red-500 bg-red-500 text-white hover:bg-red-200 hover:text-red-500">
+                {isDeleted ? (
+                  <Loader
+                    size={16}
+                    strokeWidth={2.5}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Trash size={16} strokeWidth={2.5} />
+                )}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="shadow-md border border-foreground">
+              <DialogHeader>
+                <DialogTitle>Delelte the workspace</DialogTitle>
+              </DialogHeader>
+              <p>Are you sure you want to delete this workspace?</p>
+              <div className="flex items-center justify-end gap-3">
+                <DialogClose asChild>
+                  <Button variant="outline" className="px-3 py-1.5">
+                    No
+                  </Button>
+                </DialogClose>
+                <Button
+                  variant="default"
+                  className="px-3 py-1.5"
+                  onClick={handleDelete}>
+                  Yes!
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          {/* ======================================================== Delete ======================================================== */}
           <Button
             onClick={handleSave}
             disabled={isSaved}
