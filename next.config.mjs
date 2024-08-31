@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+import withPWA from 'next-pwa';
+
 const nextConfig = {
   images: {
     dangerouslyAllowSVG: true,
@@ -6,10 +8,13 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "**",
-        
       },
     ],
   },
 };
 
-export default nextConfig;
+const withPWAConfig = withPWA({
+  dest: 'public',
+});
+
+export default withPWAConfig(nextConfig);
