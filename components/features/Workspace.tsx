@@ -1,9 +1,15 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Input } from "@/components/ui/inputAnimated";
 import { Button } from "@/components/ui/button";
-import { Grid, Loader, Save, Trash } from "lucide-react";
-import { Excalidraw, MainMenu, WelcomeScreen } from "@excalidraw/excalidraw";
+import { Fullscreen, Grid, Loader, Minimize, Save, Trash } from "lucide-react";
+import {
+  Excalidraw,
+  MainMenu,
+  WelcomeScreen,
+  Footer,
+  Sidebar,
+} from "@excalidraw/excalidraw";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -16,6 +22,30 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+interface FullScreenElement extends HTMLDivElement {
+  mozRequestFullScreen?: () => Promise<void>;
+  webkitRequestFullscreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
+}
+
+interface FullScreenDocument extends Document {
+  mozCancelFullScreen?: () => Promise<void>;
+  webkitExitFullscreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+}
+
+// function debounce<T extends (...args: any[]) => void>(
+//   func: T,
+//   wait: number
+// ): T {
+//   let timeout: NodeJS.Timeout | null = null;
+//   return function (this: any, ...args: Parameters<T>) {
+//     const context = this;
+//     if (timeout) clearTimeout(timeout);
+//     timeout = setTimeout(() => func.apply(context, args), wait);
+//   } as T;
+// }
+
 export default function Workspace({ data }: any) {
   const router = useRouter();
   const { resolvedTheme }: any = useTheme();
@@ -25,18 +55,42 @@ export default function Workspace({ data }: any) {
   const [isDeleted, setIsDeleted] = useState(false);
   const [isGrid, setIsGrid] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const canvasRef = useRef<FullScreenElement>(null);
 
-  // useEffect(() => {
-  //   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-  //     console.log(event)
-  //   };
-
-  //   window.addEventListener("beforeunload", handleBeforeUnload);
-
-  //   return () => {
-  //     window.removeEventListener("beforeunload", handleBeforeUnload);
-  //   };
-  // }, []);
+  const changeFullScreenState = () => {
+    if (canvasRef.current) {
+      if (!isFullScreen) {
+        // Enter full screen
+        if (canvasRef.current.requestFullscreen) {
+          canvasRef.current.requestFullscreen();
+        } else if (canvasRef.current.mozRequestFullScreen) {
+          // Firefox
+          (canvasRef.current as any).mozRequestFullScreen();
+        } else if (canvasRef.current.webkitRequestFullscreen) {
+          // Chrome, Safari, and Opera
+          (canvasRef.current as any).webkitRequestFullscreen();
+        } else if (canvasRef.current.msRequestFullscreen) {
+          // IE/Edge
+          (canvasRef.current as any).msRequestFullscreen();
+        }
+        setIsFullScreen(true);
+      } else {
+        // Exit full screen
+        const fullScreenDoc = document as FullScreenDocument;
+        if (fullScreenDoc.exitFullscreen) {
+          fullScreenDoc.exitFullscreen();
+        } else if (fullScreenDoc.mozCancelFullScreen) {
+          fullScreenDoc.mozCancelFullScreen();
+        } else if (fullScreenDoc.webkitExitFullscreen) {
+          fullScreenDoc.webkitExitFullscreen();
+        } else if (fullScreenDoc.msExitFullscreen) {
+          fullScreenDoc.msExitFullscreen();
+        }
+        setIsFullScreen(false);
+      }
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -59,6 +113,10 @@ export default function Workspace({ data }: any) {
       setIsSaved(false);
     }
   };
+
+  // Debounced save function
+  // const debouncedSave = useCallback(debounce(handleSave, 2000), [handleSave])
+
   const handleDelete = async () => {
     try {
       setIsDeleted(true);
@@ -149,13 +207,13 @@ export default function Workspace({ data }: any) {
           </Button>
         </div>
       </div>
-      <div className="border border-border h-[80vh]">
+      <div className="border border-border h-[80vh]" ref={canvasRef}>
         <Excalidraw
           initialData={{ elements: data.elements }}
           theme={resolvedTheme}
-          onChange={(excalidrawElements, appState) =>
+          onChange={(excalidrawElements, appState) => {
             setWhiteBoardData(excalidrawElements)
-          }
+          }}
           gridModeEnabled={isGrid}
           UIOptions={{
             canvasActions: {
@@ -178,6 +236,20 @@ export default function Workspace({ data }: any) {
               <WelcomeScreen.Center.MenuItemHelp />
             </WelcomeScreen.Center>
           </WelcomeScreen>
+          <Footer>
+            <Sidebar.Trigger
+              onToggle={changeFullScreenState}
+              name="fullscreen"
+              tab="fullscreen"
+              icon={
+                isFullScreen ? <Minimize size={24} /> : <Fullscreen size={24} />
+              }
+              style={{
+                marginLeft: "0.5rem",
+                color: "white",
+              }}
+            />
+          </Footer>
         </Excalidraw>
       </div>
     </section>
